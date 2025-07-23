@@ -123,8 +123,8 @@ smallStepB (Leq (Num n1) (Num n2),s)
  | otherwise                           = (FALSE,s)
 smallStepB (Leq (Num n) e,s)           = let (e1,s1) = smallStepE (e,s)
                                          in (Leq (Num n) e1, s1)
-smallStepB (Leq e1 e2,s)               = let (e1,s1) = smallStepE (e1,s)
-                                         in (Leq e1 e2, s1)
+smallStepB (Leq e1 e2,s)               = let (e1dash,s1) = smallStepE (e1,s)
+                                         in (Leq e1dash e2, s1)
 smallStepB (Igual (Num n1) (Num n2),s)
  | n1 == n2                            = (TRUE,s)
  | otherwise                           = (FALSE,s)
@@ -148,11 +148,17 @@ smallStepC (While b c, s)              = (If b (Seq c (While b c)) Skip,s)
  -- Throw -- gera uma exceção
  -- Try C C -- Try C1 C2 --tenta executar C1, caso ocorra exceção, executa o catch (C2). Caso não ocorra exceção em C1, C2 nunca é executado
  -- ThreeTimes C   ---- Executa o comando C 3 vezes
+ 
  -- DoWhile C B --- DoWhile C B: executa C enquanto B é verdadeiro
- -- Loop C E      ---- Loop E C: executa E vezes o comando C 
+ --smallStepC (DoWhile b c,s)            = (Seq c (While b c),s)
+ -- Loop C E      ---- Loop E C: executa E vezes o comando C
+-- smallStepC (Loop c (Num 0),s)         = (Skip,s)
+ --smallStepC (Loop c (Num n),s)         = (Seq c (Loop c (Num n - 1)),s) -- Verificar se esse é mesmo o smallStep
  -- Assert B C --- Assert B C: caso B seja verdadeiro, executa o comando C
- -- ExecWhile E E C -- ExecWhile E1 E2 C: Enquanto a expressão E1 for menor que a expressão E2, executa C 
+ --smallStepC (Assert b c,s)             = (If b c Skip,s)
+ -- ExecWhile E E C -- ExecWhile E1 E2 C: Enquanto a expressão E1 for menor que a expressão E2, executa C
  -- DAtrrib E E E E -- Dupla atribuição: recebe duas variáveis "e1" e "e2" e duas expressões "e3" e "e4". Faz e1:=e3 e e2:=e4.
+ --smallStepC (DAtrrib e1 e2 e3 e4,s)    = (Seq (Atrib e1 e3) (Atrib e2 e4),s)
 
 
 ----------------------
