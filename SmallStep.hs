@@ -99,21 +99,52 @@ smallStepE (Mult (Num n) e, s)         = let (el,sl) = smallStepE (e,s)
                                          in (Mult (Num n) el, sl)
 smallStepE (Mult e1 e2,s)              = let (el,sl) = smallStepE (e1,s)
                                          in (Mult el e2,sl)
--- smallStepE (Sub e1 e2,s)              =
+smallStepE (Sub (Num n1) (Num n2), s)  = (Num (n1 - n2), s)
+smallStepE (Sub (Num n) e, s)          = let (el,sl) = smallStepE (e,s)
+                                         in (Sub (Num n) el, sl)
+smallStepE (Sub e1 e2,s)               = let (el,sl) = smallStepE (e1,s)
+                                         in (Sub el e2,sl)
 
+smallStepB :: (B,Memoria) -> (B, Memoria)
+smallStepB (Not FALSE,s)               = (TRUE,s)
+smallStepB (Not TRUE,s)                = (FALSE,s)
+smallStepB (Not b,s)                   = let (bdash,s1) = smallStepB (b,s)
+                                         in (Not bdash, s1)
+smallStepB (And FALSE b,s)             = (FALSE,s)
+smallStepB (And TRUE b,s)              = (b,s)
+smallStepB (And b1 b2,s)               = let (b1,s1) = smallStepB (b1,s)
+                                         in (And b1 b2,s1)
+smallStepB (Or FALSE b,s)              = (b,s)
+smallStepB (Or TRUE b,s)               = (TRUE,s)
+smallStepB (Or b1 b2,s)                = let (b1,s1) = smallStepB (b1,s)
+                                         in (Or b1 b2,s1)
+smallStepB (Leq (Num n1) (Num n2),s)
+ | n1 <= n2                            = (TRUE,s)
+ | otherwise                           = (FALSE,s)
+smallStepB (Leq (Num n) e,s)           = let (e1,s1) = smallStepE (e,s)
+                                         in (Leq (Num n) e1, s1)
+smallStepB (Leq e1 e2,s)               = let (e1,s1) = smallStepE (e1,s)
+                                         in (Leq e1 e2, s1)
+smallStepB (Igual (Num n1) (Num n2),s)
+ | n1 == n2                            = (TRUE,s)
+ | otherwise                           = (FALSE,s)
+smallStepB (Igual (Num n) e,s)         = let (e1,s1) = smallStepE (e,s)
+                                         in (Igual (Num n) e1, s1)
+smallStepB (Igual e1 e2,s)             = let (e1,s1) = smallStepE (e1,s)
+                                         in (Igual e1 e2, s1)
 
---smallStepB :: (B,Memoria) -> (B, Memoria)
--- smallStepB (Not b,s) 
---smallStepB (And b1 b2,s )  =
---smallStepB (Or b1 b2,s )  =
---smallStepB (Leq e1 e2, s) =
---smallStepB (Igual e1 e2, s) = -- recebe duas expressões aritméticas e devolve um valor booleano dizendo se são iguais
-
--- smallStepC :: (C,Memoria) -> (C,Memoria)
--- smallStepC (If b c1 c2,s)  
---smallStepC (Seq c1 c2,s)  
---smallStepC (Atrib (Var x) e,s) 
---smallStepC (While b c, s) 
+smallStepC :: (C,Memoria) -> (C,Memoria)
+smallStepC (If FALSE c1 c2,s)          = (c2,s)
+smallStepC (If TRUE c1 c2,s)           = (c1,s)
+smallStepC (If b c1 c2,s)              = let (bdash,s) = smallStepB (b,s)
+                                         in (If bdash c1 c2,s)
+smallStepC (Seq Skip c,s)              = (c,s)
+smallStepC (Seq c1 c2,s)               = let (c1dash,s1) = smallStepC (c1,s)
+                                         in (Seq c1dash c2,s1)
+smallStepC (Atrib (Var x) (Num n),s)   = (Skip,(mudaVar s x n))
+smallStepC (Atrib (Var x) e,s)         = let (e1,s1) = smallStepE (e1,s)
+                                         in (Atrib (Var x) e1,s1)
+smallStepC (While b c, s)              = (If b (Seq c (While b c)) Skip,s)
  -- Throw -- gera uma exceção
  -- Try C C -- Try C1 C2 --tenta executar C1, caso ocorra exceção, executa o catch (C2). Caso não ocorra exceção em C1, C2 nunca é executado
  -- ThreeTimes C   ---- Executa o comando C 3 vezes
@@ -148,8 +179,8 @@ isFinalB _       = False
 
 -- Descomentar quanto a função smallStepB estiver implementada:
 
---interpretadorB :: (B,Memoria) -> (B, Memoria)
---interpretadorB (b,s) = if (isFinalB b) then (b,s) else interpretadorB (smallStepB (b,s))
+interpretadorB :: (B,Memoria) -> (B, Memoria)
+interpretadorB (b,s) = if (isFinalB b) then (b,s) else interpretadorB (smallStepB (b,s))
 
 
 -- Interpretador da Linguagem Imperativa
