@@ -81,9 +81,16 @@ mudaVar ((s,i):xs) v n
   | otherwise  = (s,i): mudaVar xs v n
 
 
+
 -------------------------------------
 ---
 --- Completar os casos comentados das seguintes funções:
+---
+---------------------------------
+
+---------------------------------
+---
+--- COMEÇO DAS FUNÇÕES ARITIMÉTICAS
 ---
 ---------------------------------
 
@@ -104,6 +111,103 @@ smallStepE (Sub (Num n) e, s)          = let (el,sl) = smallStepE (e,s)
                                          in (Sub (Num n) el, sl)
 smallStepE (Sub e1 e2,s)               = let (el,sl) = smallStepE (e1,s)
                                          in (Sub el e2,sl)
+                                         ---------------------------------
+---
+--- FIM DAS FUNÇÕES ARITIMÉTICAS
+---
+---------------------------------
+                                         
+---------------------------------
+---
+--- COMEÇO DOS TESTES ARITIMÉTICOS
+---
+---------------------------------
+
+exArit :: Memoria
+exArit = [ ("x", 10), ("y", 5), ("z", 0)]
+
+-- NUMEROS E VARIÁVEIS
+testeA1a :: E
+testeA1a = (Num 15)                         
+-- ESPERADO: 15
+-- Não precisa de mais processamento, é uma constante.
+
+testeA1b :: E
+testeA1b = (Var "x")                       
+-- ESPERADO: 10
+-- A variável "x" é 10 na memória exArit.
+
+testeA1c :: E 
+testeA1c = (Var "y")                        
+-- ESPERADO: 5
+-- A variável "y" é 5 na memória exArit.
+
+-- SOMAS
+testeA2a :: E
+testeA2a = (Soma (Num 5) (Num 3))          
+-- Esperado: 8
+-- 5 + 3 = 8, uma soma simples.
+
+testeA2b :: E
+testeA2b = (Soma (Var "x") (Num 2))        
+-- Esperado: 12
+-- 10 + 2 = 12. A variável "x" é 10 na memória exArit.
+
+testeA2c :: E
+testeA2c = (Soma (Var "x") (Var "y"))      
+-- Esperado: 15
+-- 10 + 5 = 15. "x" é 10 e "y" é 5.
+
+-- SUBTRAÇÕES
+testeA3a :: E
+testeA3a = (Sub (Num 10) (Num 4))          
+-- Esperado: 6
+-- 10 - 4 = 6, uma subtração simples.
+
+testeA3b :: E
+testeA3b = (Sub (Var "x") (Num 5))         
+-- Esperado: 5
+-- 10 - 5 = 5. "x" é 10.
+
+-- MULTIPLICAÇÕES
+testeA4a :: E
+testeA4a = (Mult (Num 3) (Num 6))          
+-- Esperado: 18
+-- 3 * 6 = 18, uma multiplicação simples.
+
+testeA4b :: E
+testeA4b = (Mult (Var "y") (Num 2))        
+-- Esperado: 10
+-- 5 * 2 = 10. "y" é 5.
+
+testeA4c :: E
+testeA4c = (Mult (Var "x") (Var "y"))      
+-- Esperado: 50
+-- 10 * 5 = 50. "x" é 10 e "y" é 5.
+
+-- EXPRESSÕES COMPLEXAS (MÚLTIPLAS CONTAS)
+testeA5a :: E
+testeA5a = (Soma (Mult (Num 2) (Num 3)) (Sub (Num 10) (Num 5)))        
+-- Esperado: 11
+-- (2 * 3) + (10 - 5) = 6 + 5 = 11.
+
+testeA5b:: E
+testeA5b= (Mult (Sub (Var "x") (Var "y")) (Soma (Var "y") (Num 1)))   
+-- Esperado: 30
+-- (10 - 5) * (5 + 1) = 5 * 6 = 30. "x" é 10 e "y" é 5.
+
+---------------------------------
+---
+--- FIM DOS TESTES ARITIMÉTICOS
+---
+---------------------------------
+
+---------------------------------
+---
+--- COMEÇO DAS FUNÇÕES BOOLEANAS
+---
+---------------------------------
+
 
 smallStepB :: (B,Memoria) -> (B, Memoria)
 smallStepB (Not FALSE,s)               = (TRUE,s)
@@ -112,12 +216,12 @@ smallStepB (Not b,s)                   = let (bdash,s1) = smallStepB (b,s)
                                          in (Not bdash, s1)
 smallStepB (And FALSE b,s)             = (FALSE,s)
 smallStepB (And TRUE b,s)              = (b,s)
-smallStepB (And b1 b2,s)               = let (b1,s1) = smallStepB (b1,s)
-                                         in (And b1 b2,s1)
+smallStepB (And b1 b2,s)               = let (b1dash,s1) = smallStepB (b1,s)
+                                         in (And b1dash b2,s1)
 smallStepB (Or FALSE b,s)              = (b,s)
 smallStepB (Or TRUE b,s)               = (TRUE,s)
-smallStepB (Or b1 b2,s)                = let (b1,s1) = smallStepB (b1,s)
-                                         in (Or b1 b2,s1)
+smallStepB (Or b1 b2,s)                = let (b1dash,s1) = smallStepB (b1,s)
+                                         in (Or b1dash b2,s1)
 smallStepB (Leq (Num n1) (Num n2),s)
  | n1 <= n2                            = (TRUE,s)
  | otherwise                           = (FALSE,s)
@@ -130,8 +234,91 @@ smallStepB (Igual (Num n1) (Num n2),s)
  | otherwise                           = (FALSE,s)
 smallStepB (Igual (Num n) e,s)         = let (e1,s1) = smallStepE (e,s)
                                          in (Igual (Num n) e1, s1)
-smallStepB (Igual e1 e2,s)             = let (e1,s1) = smallStepE (e1,s)
-                                         in (Igual e1 e2, s1)
+smallStepB (Igual e1 e2,s)             = let (e1dash,s1) = smallStepE (e1,s)
+                                         in (Igual e1dash e2, s1)
+
+---------------------------------
+---
+--- FIM DAS FUNÇÕES BOOLEANAS
+---
+---------------------------------
+
+---------------------------------
+---
+--- COMEÇO DOS TESTES BOOLEANOS
+---
+---------------------------------
+
+exBool :: Memoria
+exBool = [ ("x", 10), ("y",0), ("z",0)]
+
+-- OPERADOR AND
+-- Os resultados esperados são utilizando a memória "exBool"
+testeB1a :: B
+testeB1a = (And TRUE FALSE)                   -- ESPERADO: False
+
+testeB1b :: B
+testeB1b = (And TRUE TRUE)                    -- ESPERADO: True
+
+testeB1c :: B
+testeB1c = (And (Leq (Num 5) (Num 10)) FALSE) -- ESPERADO: False
+
+testeB1d :: B
+testeB1d = (And (Leq (Var "x") (Var "y")) (Igual (Var "x") (Var "z"))) -- ESPERADO: False
+
+-- OPERADOR OR
+testeB2a :: B
+testeB2a = (Or TRUE FALSE)                   -- ESPERADO: True
+
+testeB2b :: B
+testeB2b = (Or FALSE FALSE)                  -- ESPERADO: False
+
+testeB2c :: B
+testeB2c = (Or (Leq (Num 10) (Num 5)) TRUE)  -- ESPERADO: True
+
+testeB2d :: B
+testeB2d = (Or (Leq (Var "x") (Var "y")) (Igual (Var "x") (Var "z"))) -- ESPERADO: True
+
+-- OPERADOR LEQ
+testeB3a :: B
+testeB3a = (Leq (Num 5) (Num 10))             -- ESPERADO: True
+
+testeB3b :: B
+testeB3b = (Leq (Num 10) (Num 5))             -- ESPERADO:False
+
+testeB3c :: B
+testeB3c = (Leq (Var "y") (Var "x"))          -- ESPERADO: True
+
+testeB3d :: B
+testeB3d = (Leq (Soma (Var "x") (Num 1)) (Mult (Var "z") (Num 2))) -- ESPERADO: False
+
+-- OPERADOR IGUAL
+testeB4a :: B
+testeB4a = (Igual (Num 5) (Num 5))            -- ESPERADO:True
+
+testeB4b :: B
+testeB4b = (Igual (Num 5) (Num 10))           -- ESPERADO: False
+
+testeB4c :: B
+testeB4c = (Igual (Var "y") (Var "z"))        -- ESPERADO: True
+
+testeB4d :: B
+testeB4d = (Igual (Soma (Var "x") (Num 0)) (Var "x")) -- ESPERADO: True
+
+testeB4e :: B
+testeB4e = (Igual (Soma (Var "x") (Num 1)) (Var "z")) -- ESPERADO: False
+
+---------------------------------
+---
+--- FIM DOS TESTES BOOLEANOS
+---
+---------------------------------
+
+---------------------------------
+---
+--- COMEÇO DAS FUNÇÕES CONDICIONAIS
+---
+---------------------------------
 
 smallStepC :: (C,Memoria) -> (C,Memoria)
 smallStepC (If FALSE c1 c2,s)          = (c2,s)
