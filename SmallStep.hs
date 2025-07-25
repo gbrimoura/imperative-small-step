@@ -329,23 +329,23 @@ smallStepC (Seq Skip c,s)              = (c,s)
 smallStepC (Seq c1 c2,s)               = let (c1dash,s1) = smallStepC (c1,s)
                                          in (Seq c1dash c2,s1)
 smallStepC (Atrib (Var x) (Num n),s)   = (Skip,(mudaVar s x n))
-smallStepC (Atrib (Var x) e,s)         = let (e1,s1) = smallStepE (e1,s)
+smallStepC (Atrib (Var x) e,s)         = let (e1,s1) = smallStepE (e,s)
                                          in (Atrib (Var x) e1,s1)
 smallStepC (While b c, s)              = (If b (Seq c (While b c)) Skip,s)
  -- Throw -- gera uma exceção
  -- Try C C -- Try C1 C2 --tenta executar C1, caso ocorra exceção, executa o catch (C2). Caso não ocorra exceção em C1, C2 nunca é executado
  -- ThreeTimes C   ---- Executa o comando C 3 vezes
- 
+smallStepC (ThreeTimes c,s)             = (Seq c (Seq c c),s) 
  -- DoWhile C B --- DoWhile C B: executa C enquanto B é verdadeiro
- --smallStepC (DoWhile b c,s)            = (Seq c (While b c),s)
+smallStepC (DoWhile c b,s)            = (Seq c (While b c),s)
  -- Loop C E      ---- Loop E C: executa E vezes o comando C
--- smallStepC (Loop c (Num 0),s)         = (Skip,s)
- --smallStepC (Loop c (Num n),s)         = (Seq c (Loop c (Num n - 1)),s) -- Verificar se esse é mesmo o smallStep
+smallStepC (Loop c (Num 0),s)         = (Skip,s)
+smallStepC (Loop c (Num n),s)         = (Seq c (Loop c (Num (n - 1))),s) -- Verificar se esse é mesmo o smallStep
  -- Assert B C --- Assert B C: caso B seja verdadeiro, executa o comando C
- --smallStepC (Assert b c,s)             = (If b c Skip,s)
+smallStepC (Assert b c,s)             = (If b c Skip,s)
  -- ExecWhile E E C -- ExecWhile E1 E2 C: Enquanto a expressão E1 for menor que a expressão E2, executa C
  -- DAtrrib E E E E -- Dupla atribuição: recebe duas variáveis "e1" e "e2" e duas expressões "e3" e "e4". Faz e1:=e3 e e2:=e4.
- --smallStepC (DAtrrib e1 e2 e3 e4,s)    = (Seq (Atrib e1 e3) (Atrib e2 e4),s)
+smallStepC (DAtrrib e1 e2 e3 e4,s)    = (Seq (Atrib e1 e3) (Atrib e2 e4),s)
 
 
 ----------------------
@@ -384,8 +384,8 @@ isFinalC _       = False
 
 -- Descomentar quando a função smallStepC estiver implementada:
 
---interpretadorC :: (C,Memoria) -> (C, Memoria)
---interpretadorC (c,s) = if (isFinalC c) then (c,s) else interpretadorC (smallStepC (c,s))
+interpretadorC :: (C,Memoria) -> (C, Memoria)
+interpretadorC (c,s) = if (isFinalC c) then (c,s) else interpretadorC (smallStepC (c,s))
 
 
 --------------------------------------
