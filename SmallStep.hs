@@ -326,6 +326,7 @@ smallStepC (If TRUE c1 c2,s)           = (c1,s)
 smallStepC (If b c1 c2,s)              = let (bdash,s1) = smallStepB (b,s)
                                          in (If bdash c1 c2,s1)
 smallStepC (Seq Skip c,s)              = (c,s)
+smallStepC (Seq Throw c,s)             = (Throw,s)
 smallStepC (Seq c1 c2,s)               = let (c1dash,s1) = smallStepC (c1,s)
                                          in (Seq c1dash c2,s1)
 smallStepC (Atrib (Var x) (Num n),s)   = (Skip,(mudaVar s x n))
@@ -333,7 +334,7 @@ smallStepC (Atrib (Var x) e,s)         = let (e1,s1) = smallStepE (e,s)
                                          in (Atrib (Var x) e1,s1)
 smallStepC (While b c, s)              = (If b (Seq c (While b c)) Skip,s)
  -- Throw -- gera uma exceção
-smallStepC (Throw, s)                  = (Throw, s)
+--smallStepC (Throw,s)                   = (Throw,s)
  -- Try C C -- Try C1 C2 --tenta executar C1, caso ocorra exceção, executa o catch (C2). Caso não ocorra exceção em C1, C2 nunca é executado
 smallStepC (Try Throw c2, s)           = (c2, s)
 smallStepC (Try Skip c2,s)             = (Skip, s)
@@ -543,6 +544,7 @@ interpretadorB (b,s) = if (isFinalB b) then (b,s) else interpretadorB (smallStep
 
 isFinalC :: C -> Bool
 isFinalC Skip    = True
+isFinalC Throw   = True
 isFinalC _       = False
 
 -- Descomentar quando a função smallStepC estiver implementada:
