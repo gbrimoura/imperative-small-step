@@ -353,6 +353,163 @@ smallStepC (ExecWhile e1 e2 c,s)       = (While (Not (Leq e2 e1)) c,s)
  -- DAtrrib E E E E -- Dupla atribuição: recebe duas variáveis "e1" e "e2" e duas expressões "e3" e "e4". Faz e1:=e3 e e2:=e4.
 smallStepC (DAtrrib e1 e2 e3 e4,s)     = (Seq (Atrib e1 e3) (Atrib e2 e4),s)
 
+---------------------------------
+---
+--- FIM DAS FUNÇÕES CONDICIONAIS
+---
+---------------------------------
+
+---------------------------------
+---
+--- COMEÇO DOS TESTES CONDICIONAIS
+---
+---------------------------------
+
+exCond :: Memoria
+exCond = [("x", 5), ("y", 1), ("z", 0)]
+
+exCond2 :: Memoria
+exCond2 = [("x", 7), ("y", 3), ("z", 9)]
+
+-- Os resultados esperados utilizam a memória "exCond"
+-- SKIP (Quando sozinho mostra a memória)
+testeC1a :: C
+testeC1a = Skip   -- ESPERADO: (Skip, [("x",5),("y",1),("z",0)])
+
+-- ATRIBUIÇÃO
+testeC2a :: C
+testeC2a = (Atrib (Var "x") (Num 10))   -- ESPERADO: (Skip, [("x",10),("y",1),("z",0))])
+
+testeC2b :: C
+testeC2b = (Atrib (Var "y") (Soma (Var "x") (Num 2)))   -- ESPERADO: (Skip, [("x",5),("y",7),("z",0)])
+
+-- SEQUÊNCIA
+testeC3a :: C
+testeC3a = (Seq (Atrib (Var "x") (Num 10)) (Atrib (Var "y") (Soma (Var "x") (Num 5))))
+-- x := 10, (Memória: [("x",10),("y",1),("z",0)]);	y := x + 5 = 10 + 5 = 15, (Memória: [("x",10),("y",15),("z",0)]);
+-- ESPERADO: (Skip, [("x",10),("y",15),("z",0)])
+
+testeC3b :: C
+testeC3b = (Seq (Atrib (Var "z") (Var "x")) (Seq (Atrib (Var "x") (Var "y")) (Atrib (Var "y") (Var "z"))))
+-- z := x(5), [("x",5),("y",1),("z",5)];	x := y(1), [("x",1),("y",1),("z",5)];		y := z(5), [("x",1),("y",5),("z",5)]
+-- ESPERADO: (Skip, [("x",1),("y",5),("z",5)])
+
+-- SE/ENTÃO
+testeC4a :: C
+testeC4a = (If (Leq (Num 5) (Num 10))(Atrib (Var "x") (Num 100))(Atrib (Var "x") (Num 0)))
+-- 5 <= 10 é TRUE, então x := 100.	ESPERADO: (Skip, [("x",100),("y",1),("z",0)])
+
+testeC4b :: C
+testeC4b = (If (Leq (Num 10) (Num 5))(Atrib (Var "x") (Num 100))(Atrib (Var "x") (Num 0)))
+-- 10 <= 5 é FALSE, então x := 0.		ESPERADO: (Skip, [("x",0),("y",1),("z",0)])
+
+testeC4c :: C
+testeC4c = (If (Igual (Var "x") (Num 5))(Atrib (Var "z") (Num 10))(Atrib (Var "z") (Num 5)))
+-- x (5) == 5 é TRUE, então z := 10.	ESPERADO: (Skip, [("x",5),("y",1),("z",10)])
+
+-- ENQUANTO
+testeC5a :: C
+testeC5a = (Seq (Atrib (Var "y") (Num 1))
+                (While (Not (Igual (Var "x") (Num 0)))
+                       (Seq (Atrib (Var "y") (Mult (Var "y") (Var "x")))
+                            (Atrib (Var "x") (Sub (Var "x") (Num 1))))))
+-- Enquanto x for diferente de 0 faz y := y * x e x := x-1
+-- (x=5,y=1) -> x!=0? T -> y=1*5=5, x=4;		(x=4,y=5) -> x!=0? T -> y=5*4=20, x=3;		(x=3,y=20) -> x!=0? T -> y=20*3=60, x=2
+-- (x=2,y=60) -> x!=0? T -> y=60*2=120, x=1;	(x=1,y=120) -> x!=0? T -> y=120*1=120, x=0;		(x=0,y=120) -> x!=0? F -> FIM
+-- ESPERADO: (Skip, [("x",0),("y",120),("z",0)])
+
+-- THROW (Exceção)
+testeC5b :: C
+testeC5b = Throw
+-- Gera uma exceção que permanece.	ESPERADO: (Throw, [("x",5),("y",1),("z",0)])
+
+-- TRY-CATCH
+testeC5c :: C
+testeC5c = (Try (Atrib (Var "x") (Num 10)) (Atrib (Var "y") (Num 99)))
+-- Tenta x := 10 (sucesso), então y := 99 nunca é executado.	ESPERADO: (Skip, [("x",10),("y",1),("z",0)])
+
+testeC5d :: C
+testeC5d = (Try Throw (Atrib (Var "z") (Num 50)))
+-- Tenta Throw (gera exceção), então executa z := 50.	ESPERADO: (Skip, [("x",5),("y",1),("z",50)])
+
+testeC5e :: C
+testeC5e = (Seq (Try Throw (Atrib (Var "x") (Num 15))) (Atrib (Var "y") (Num 25)))
+-- Primeiro: Try Throw (executa x := 15); depois y := 25.	ESPERADO: (Skip, [("x",15),("y",25),("z",0)])
+
+-- TRÊS VEZES
+testeC6a :: C
+testeC6a = (ThreeTimes (Atrib (Var "y") (Soma (Var "y") (Num 1))))
+-- Faz y := y+1 três vezes.	ESPERADO: (Skip, [("x",5),("y",4),("z",0)])
+
+-- FAÇA ENQUANTO
+testeC7a :: C
+testeC7a = (DoWhile (Atrib (Var "x") (Soma (Var "x") (Num 1)))
+                    (Leq (Var "x") (Num 7)))
+-- Faz x := x+1 enquanto x <= 7	ESPERADO: (Skip, [("x",8),("y",1),("z",0)])
+
+testeC7b :: C
+testeC7b = (DoWhile (Atrib (Var "x") (Soma (Var "x") (Num 1)))
+                    (Leq (Var "x") (Num 0)))
+-- Faz x := x+1 enquanto x <= 0	ESPERADO: (Skip, [("x",6),("y",1),("z",0)])
+
+-- LOOP
+testeC8a :: C
+testeC8a = (Loop (Atrib (Var "y") (Soma (Var "y") (Num 1))) (Num 5))
+-- Faz y := y+1, 5 vezes	ESPERADO: (Skip, [("x",5),("y",6),("z",0)])
+
+testeC8b :: C
+testeC8b = (Loop (Atrib (Var "x") (Soma (Var "x") (Num 1))) (Num 0))
+-- Faz y := y+1, 0 vezes	ESPERADO: (Skip, [("x",5),("y",1),("z",0)])
+
+-- ASSERT
+testeC9a :: C
+testeC9a = (Assert (Leq (Var "x") (Num 10)) (Atrib (Var "z") (Num 1)))
+-- x (5) <= 10 é TRUE, então z := 1	ESPERADO: (Skip, [("x",5),("y",1),("z",1)])
+
+testeC9b :: C
+testeC9b = (Assert (Leq (Var "x") (Num 0)) (Atrib (Var "z") (Num 1)))
+-- x (5) <= 0 é FALSE, então Skip	ESPERADO: (Skip, [("x",5),("y",1),("z",0)])
+
+-- EXECUTAR ENQUANTO
+testeC10a :: C
+testeC10a = (ExecWhile (Var "x") (Num 8)(Atrib (Var "x") (Soma (Var "x") (Num 1))))
+-- Memória inicial: x=5;	x=5 < 8	TRUE -> x=6;	x=6 < 8 	TRUE -> x=7
+-- x=7 < 8 	TRUE -> x=8;	x=8 < 8 	FALSE -> Termina;	ESPERADO: (Skip, [("x",8),("y",1),("z",0)])
+
+testeC10b :: C
+testeC10b= (ExecWhile (Var "x") (Num 3) (Atrib (Var "x") (Soma (Var "x") (Num 1))))
+-- Memória inicial: x=5;	x=5 < 3 	FALSE -> Termina	ESPERADO: (Skip, [("x",5),("y",1),("z",0)])
+
+testeC10c :: C
+testeC10c = (ExecWhile (Var "y") (Num 3) (Atrib (Var "y") (Soma (Var "y") (Num 1))))
+-- Memória inicial: y=1;	y=1 < 3 	TRUE -> y=2;	y=2 < 3	TRUE -> y=3;
+-- y=3<3 	FALSE -> Termina;	ESPERADO: (Skip, [("x",5),("y",3),("z",0)])
+
+testeC11a :: C
+-- DUPLA ATRIBUIÇÃO
+testeC11a = (DAtrrib (Var "x") (Var "y") (Num 20) (Num 30))
+-- x := 20, y := 30;	ESPERADO: (Skip, [("x",20),("y",30),("z",0)])
+
+testeC11b :: C
+testeC11b = (DAtrrib (Var "x") (Var "y") (Soma (Var "x") (Num 1)) (Soma (Var "y") (Num 1)))
+-- Memória inicial: x=5, y=1;	x = 5 + 1 = 6;	y = 1 + 1 = 2	x := 6, y := 2;
+-- ESPERADO: (Skip, [("x",6),("y",2),("z",0)])
+
+testeC11c :: C
+testeC11c = (DAtrrib (Var "x") (Var "y") (Var "y") (Var "x"))
+-- Memória inicial: x=5, y=1;	x = y (1) = 1;	y = x (1) = 1;	x := 1, y := 1;
+-- ESPERADO: (Skip, [("x",1),("y",1),("z",0)])
+
+testeC11d :: C
+testeC11d = (DAtrrib (Var "x") (Var "z") (Mult (Var "x") (Num 2)) (Soma (Var "y") (Var "x")))
+-- Memória inicial: x=5, y=1, z=0;		x = x * 2 = 5 * 2 = 10;	z = y + x = 1 + 10 = 11;
+-- Esperado: (Skip, [("x",10),("y",1),("z",11)])
+
+---------------------------------
+---
+--- FIM DOS TESTES CONDICIONAIS
+---
+---------------------------------
 
 ----------------------
 --  INTERPRETADORES
